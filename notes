@@ -1,0 +1,49 @@
+http://www.academia.edu/215151/Mark_Monmonier_on_maps_and_mapping
+https://www.udel.edu/johnmack/frec682/cholera/index.html
+https://www.udel.edu/johnmack/frec682/cholera/cholera2.html
+https://en.wikipedia.org/wiki/1854_Broad_Street_cholera_outbreak
+http://www.theguardian.com/news/datablog/2013/mar/15/john-snow-cholera-map
+
+http://blog.rtwilson.com/john-snows-cholera-data-in-more-formats/
+
+
+
+
+
+sketchy
+  Fredericka the Great
+  Londrina Sketch
+
+
+
+Goudy Bookletter 1911
+Pirata One
+
+
+IM Fell DW Pica SC
+IM Fell DW Pica
+IM Fell Double Pica
+Goudy Bookletter 1911
+
+
+
+IM Fell English SC
+IM Fell English
+Meddon
+
+<link href='https://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+English|Meddon' rel='stylesheet' type='text/css'>
+@import url(https://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+English|Meddon);
+
+font-family: 'IM Fell English SC', serif;
+font-family: 'IM Fell English', serif;
+font-family: 'Meddon', cursive;
+
+
+ogr2ogr -f GeoJSON -t_srs crs:84 deaths-crs84.geojson Cholera_Deaths.shp
+ogr2ogr -f GeoJSON -t_srs crs:84 pumps-crs84.geojson Pumps.shp
+
+ogr2ogr -f GeoJSON deaths-notcrs84.geojson Cholera_Deaths.shp
+ogr2ogr -f GeoJSON pumps-notcrs84.geojson Pumps.shp
+
+
+ogr2ogr -f GeoJSON -t_srs osgb deaths-osgb.geojson Cholera_Deaths.shp

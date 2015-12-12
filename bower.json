@@ -1,0 +1,25 @@
+{
+  "name": "johnsnow",
+  "authors": [
+    "thfield <thfield@gmail.com>"
+  ],
+  "description": "diagram the famous cholera map from 1854",
+  "main": "js/app.js",
+  "moduleType": [],
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "d3-plugins": "*",
+    "d3": "~3.5.10",
+    "topojson": "~1.6.19",
+    "turf": "~2.0.2"
+  }
+}
