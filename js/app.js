@@ -24,6 +24,15 @@
   var path = d3.geo.path()
       .projection(projection);
 
+  var snowmap = svg.append("g")
+      .attr("class", "snowmap")
+
+  var pumpPos = [],
+      deathPos = [];
+
+  var pumpCoord = [],
+      deathCoord = [];
+
   svg
       .call(renderTiles, "highroad") //remove to stop roads rendering
       // .call(renderTiles, "buildings") //remove to stop buildings rendering
@@ -31,11 +40,51 @@
       .call(renderDeathsbyCholera) //remove to stop cholera data rendering
       ;
 
-  var snowmap = svg.append("g")
-      .attr("class", "snowmap")
-
 // d3.select(window).on('resize', resize);
 
+  function renderVoronoi(){
+    var deathsGeojson = turf.featurecollection(
+          deathCoord.map(function(el){
+            return turf.point(el[0],el[1]);
+          })
+        ),
+        bbox = turf.size( turf.extent(deathsGeojson),2 ),
+        voronoiConstructor = d3.geom.voronoi().clipExtent([ [bbox[0],bbox[1]], [bbox[2], bbox[3]] ]),
+        polygons = voronoiConstructor(pumpCoord),
+        polygonsGeojson = polygons.map(function(el){
+          var temp = el;
+          temp.push(el[0]);
+          return turf.polygon(temp);;
+        });
+// debugger;
+//turf.within(deathsGeojson, turf.featurecollection(polygonsGeojson[4]))
+//turf.within(deathsGeojson, {"type": "FeatureCollection", "features": [ polygonsGeojson[4],polygonsGeojson[3] ]} )
+    polygonsGeojson.forEach(function(el,i){
+      var deathsWithin;
+      // var housesWithin = turf.within(deathsGeojson, turf.featurecollection(el) )
+      var housesWithin = turf.within(deathsGeojson, {"type": "FeatureCollection", "features": [ el ]} )
+debugger;
+      if (housesWithin.features[0]){
+          houseswithin.forEach(function(el){
+          deathsWithin += el.properties.count
+        })
+      }
+debugger;
+      el.properties.count = deathsWithin || 0;
+
+    });
+
+    debugger;
+
+    var g = snowmap.selectAll("g")
+        .data(polygons)
+      .enter().append("svg:g");
+
+    g.append("svg:path")
+        .attr("class", "cell")
+        .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+    // debugger;
+  }
 
   function renderDeathsbyCholera(){
     d3.json("data/data.geojson", function(error, cholera) {
@@ -45,7 +94,6 @@
         .data(cholera.features)
       .enter()
         .append('circle').attr('class', function(d) { return d.properties.type })
-        // .attr('r', function(d) { return 4 })
         .attr('r', function(d) {
           if (d.properties.Count){
             return Math.sqrt(d.properties.Count)+2
@@ -54,12 +102,23 @@
             return 8
           }
         })
-        .attr('transform', function(d) { return 'translate(' + projection(d.geometry.coordinates) + ')'; })
+        .attr('transform', function(d) {
+          if (d.properties.type == 'death'){
+            // deathPos.push( [projection(d.geometry.coordinates), {count: d.properties.Count} ]);
+            deathCoord.push( [d.geometry.coordinates, {count: d.properties.Count} ]);
+          } else if (d.properties.type == 'pump'){
+            // pumpPos.push( projection(d.geometry.coordinates) );
+            pumpCoord.push( d.geometry.coordinates );
+          }
+          return 'translate(' + projection(d.geometry.coordinates) + ')';
+        })
         .on('mouseover', function(d) {
             var el = d3.select(this)
             ttFollow(el,innertext(d));
           })
           .on('mouseout', function(){ ttHide(); });
+    // renderVoronoi();
+      makeLastChild('snowmap',false);
     });
   }
 
@@ -176,3 +235,12 @@ function innertext(d){
     else {return x + ' deaths'}
   };
 };
+
+function makeLastChild(child, id) {
+  if (id == true) {
+    var c = document.getElementById(child);
+  } else {
+    var c = document.getElementsByClassName(child)[0];
+  }
+  c.parentNode.appendChild(c);
+}
