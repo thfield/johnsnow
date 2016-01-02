@@ -132,7 +132,9 @@ debugger;
       .enter().append("g")
         .each(function(d) {
           var g = d3.select(this);
-          d3.json("http://" + ["a", "b", "c"][(d[0] * 31 + d[1]) % 3] + ".tile.openstreetmap.us/vectiles-" + type + "/" + d[2] + "/" + d[0] + "/" + d[1] + ".json", function(error, json) {
+          // d3.json("http://" + ["a", "b", "c"][(d[0] * 31 + d[1]) % 3] + ".tile.openstreetmap.us/vectiles-" + type + "/" + d[2] + "/" + d[0] + "/" + d[1] + ".json", function(error, json) {
+          // use the locally cached tiles
+          d3.json("data/osm/" + ["a", "b", "c"][(d[0] * 31 + d[1]) % 3] + "-" + type + "-"+ d[2] + "-" + d[0] + "-" + d[1] + ".json", function(error, json) {
             if (type !== 'skeletron'){
               g.selectAll("path")
                   .data(json.features.sort(function(a, b) { return a.properties.sort_key - b.properties.sort_key; }))
