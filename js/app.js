@@ -1,17 +1,15 @@
 (function() {
 
-  var margin = {top: 10, left: 10, bottom: 10, right: 10}
-      , width = parseInt(d3.select('#map_container').style('width'))
-      , width = width - margin.left - margin.right
-      , mapRatio = 1
-      , height = width * mapRatio
-      , scaleMultiplier = 5000
-      ;
+  var margin = {top: 0, left: 0, bottom: 0, right: 0},
+      width = parseInt(d3.select('#map_container').style('width')),
+      width = width - margin.left - margin.right,
+      mapRatio = 1,
+      height = width * mapRatio,
+      scaleMultiplier = 5000;
 
   var svg = d3.select("#map_container").append("svg")
       .attr("height", height)
-      .attr("id","neighborhood-map")
-      ;
+      .attr("id","neighborhood-map");
 
   var tiler = d3.geo.tile()
       .size([width, height]);
@@ -24,8 +22,15 @@
   var path = d3.geo.path()
       .projection(projection);
 
+  var voronois = svg.append("g")
+      .attr("class", "voronois")
+
+  var osmRoads = svg.append("g")
+      .attr("class", "osmRoads")
+
   var snowmap = svg.append("g")
       .attr("class", "snowmap")
+
 
   var pumpPos = [],
       deathPos = [];
@@ -34,7 +39,7 @@
       deathCoord = [];
 
   svg
-      .call(renderTiles, "highroad") //remove to stop roads rendering
+      .call(renderTiles, "highroad")  //remove to stop roads rendering
       // .call(renderTiles, "buildings") //remove to stop buildings rendering
       // .call(renderTiles, "skeletron") //remove to stop road labels
       .call(renderDeathsbyCholera) //remove to stop cholera data rendering
@@ -48,42 +53,38 @@
             return turf.point(el[0],el[1]);
           })
         ),
-        bbox = turf.size( turf.extent(deathsGeojson),2 ),
+        bbox = [0,0,width,height],
         voronoiConstructor = d3.geom.voronoi().clipExtent([ [bbox[0],bbox[1]], [bbox[2], bbox[3]] ]),
-        polygons = voronoiConstructor(pumpCoord),
-        polygonsGeojson = polygons.map(function(el){
-          var temp = el;
-          temp.push(el[0]);
-          return turf.polygon(temp);;
+        polygons = voronoiConstructor(pumpPos);
+        polygonsCoord = polygons.map(function(pol){
+          return pol.map(function(el){
+            return projection.invert(el);
+          });
         });
-// debugger;
-//turf.within(deathsGeojson, turf.featurecollection(polygonsGeojson[4]))
-//turf.within(deathsGeojson, {"type": "FeatureCollection", "features": [ polygonsGeojson[4],polygonsGeojson[3] ]} )
-    polygonsGeojson.forEach(function(el,i){
-      var deathsWithin;
-      // var housesWithin = turf.within(deathsGeojson, turf.featurecollection(el) )
-      var housesWithin = turf.within(deathsGeojson, {"type": "FeatureCollection", "features": [ el ]} )
-debugger;
+    polygonsCoord.forEach(function(el,i){
+      el.push(el[0]);
+      var deathsWithin = 0;
+      var housesWithin = turf.within(deathsGeojson, turf.featurecollection([turf.polygon([el])]) )
       if (housesWithin.features[0]){
-          houseswithin.forEach(function(el){
-          deathsWithin += el.properties.count
-        })
+          housesWithin.features.forEach(function(el){
+            deathsWithin += el.properties.count;
+          })
       }
-debugger;
-      el.properties.count = deathsWithin || 0;
-
+      polygons[i].count = deathsWithin;
     });
 
-    debugger;
-
-    var g = snowmap.selectAll("g")
+    var g = voronois.selectAll("g")
         .data(polygons)
       .enter().append("svg:g");
 
     g.append("svg:path")
         .attr("class", "cell")
+        .on('mouseover', function(d) {
+            var el = d3.select(this)
+            ttFollow(el,innertext(d.count));
+          })
+          .on('mouseout', function(){ ttHide(); })
         .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
-    // debugger;
   }
 
   function renderDeathsbyCholera(){
@@ -104,10 +105,10 @@ debugger;
         })
         .attr('transform', function(d) {
           if (d.properties.type == 'death'){
-            // deathPos.push( [projection(d.geometry.coordinates), {count: d.properties.Count} ]);
+            deathPos.push( [projection(d.geometry.coordinates), {count: d.properties.Count} ]);
             deathCoord.push( [d.geometry.coordinates, {count: d.properties.Count} ]);
           } else if (d.properties.type == 'pump'){
-            // pumpPos.push( projection(d.geometry.coordinates) );
+            pumpPos.push( projection(d.geometry.coordinates) );
             pumpCoord.push( d.geometry.coordinates );
           }
           return 'translate(' + projection(d.geometry.coordinates) + ')';
@@ -117,13 +118,12 @@ debugger;
             ttFollow(el,innertext(d));
           })
           .on('mouseout', function(){ ttHide(); });
-    // renderVoronoi();
-      makeLastChild('snowmap',false);
+      renderVoronoi();
     });
   }
 
   function renderTiles(svg, type) {
-    svg.append("g")
+    osmRoads.append("g")
         .attr("class", type)
       .selectAll("g")
         .data(tiler
@@ -174,28 +174,28 @@ debugger;
         });
   }
 
-  function resize() {
-    // adjust things when the window size changes
-    width = parseInt(d3.select('#map_container').style('width'));
-    width = width - margin.left - margin.right;
-    height = width * mapRatio;
-
-    // update projection
-    projection
-        .translate([width / 2, height / 2])
-        .scale(width*scaleMultiplier);
-
-    // resize the map container
-    svg
-        .style('width', width + 'px')
-        .style('height', height + 'px');
-
-    // resize the map
-    svg.select('.highroad').attr('d', path);
-    svg.selectAll('.minor_road').attr('d', path);
-    svg.selectAll('.major_road').attr('d', path);
-    svg.selectAll('.path').attr('d', path);
-  }
+  // function resize() {
+  //   // adjust things when the window size changes
+  //   width = parseInt(d3.select('#map_container').style('width'));
+  //   width = width - margin.left - margin.right;
+  //   height = width * mapRatio;
+  //
+  //   // update projection
+  //   projection
+  //       .translate([width / 2, height / 2])
+  //       .scale(width*scaleMultiplier);
+  //
+  //   // resize the map container
+  //   svg
+  //       .style('width', width + 'px')
+  //       .style('height', height + 'px');
+  //
+  //   // resize the map
+  //   svg.select('.highroad').attr('d', path);
+  //   svg.selectAll('.minor_road').attr('d', path);
+  //   svg.selectAll('.major_road').attr('d', path);
+  //   svg.selectAll('.path').attr('d', path);
+  // }
 
 })();
 
@@ -227,7 +227,9 @@ function ttHide() {
 }
 
 function innertext(d){
-  if (d.properties.type == 'death'){
+  if (typeof d == 'number'){
+    return pluralize(d) + ' from Cholera';
+  } else if (d.properties.type == 'death'){
     return pluralize(d.properties.Count) + ' from Cholera';
   } else if (d.properties.type == 'pump'){
     return 'Pump';
@@ -238,10 +240,10 @@ function innertext(d){
   };
 };
 
-function makeLastChild(child, id) {
-  if (id == true) {
+function makeLastChild(child, selector) {
+  if (selector == 'id') {
     var c = document.getElementById(child);
-  } else {
+  } else if (selector == 'class') {
     var c = document.getElementsByClassName(child)[0];
   }
   c.parentNode.appendChild(c);

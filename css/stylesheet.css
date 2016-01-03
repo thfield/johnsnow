@@ -8,7 +8,7 @@ path {
 }
 
 #map_container{
-  width: 1000px;
+  width: 900px;
 }
 
 #tooltip {
@@ -64,6 +64,13 @@ svg {
   fill: #d78210;
 }
 
+.cell {
+  fill: #ffffff;
+}
+
+.cell:hover {
+  fill: #d78210;
+}
 
 .hidden {
   display: none;
