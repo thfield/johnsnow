@@ -248,3 +248,6 @@ function makeLastChild(child, selector) {
   }
   c.parentNode.appendChild(c);
 }
+function handleClick(cb) {
+  d3.select('.' + cb.name).classed("hidden", !cb.checked);
+}
